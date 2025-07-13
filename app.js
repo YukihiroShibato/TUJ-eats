@@ -31,10 +31,10 @@ mongoose.connect('mongodb+srv://yukihirofshibato21:12345678!@cluster0.dklpyuq.mo
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// ✅ Default root route
-app.get('/', (req, res) => {
-  res.send('✅ TUJ Eats Backend is running!');
-});
+// // ✅ Default root route
+// app.get('/', (req, res) => {
+//   res.send('✅ TUJ Eats Backend is running!');
+// });
 
 // ✅ Start server
 const PORT = process.env.PORT || 3001;

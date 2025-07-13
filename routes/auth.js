@@ -57,7 +57,7 @@ router.post('/register', upload.single('student_id_image'), async (req, res) => 
   }
 });
 
-module.exports = router;
+
 
 
 // LOGIN ROUTE
@@ -156,4 +156,4 @@ router.post('/verify-password', async (req, res) => {
 
 
 
-
+module.exports = router;

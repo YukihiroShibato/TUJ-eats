@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TUJ Eats - Register</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #a41e34;
+      text-align: center;
+    }
+    form {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #a41e34;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #870d26;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Register for TUJ Eats</h1>
+  
+  <form id="registerForm" enctype="multipart/form-data">
+    <label for="tuid">TUid:</label>
+    <input type="text" id="tuid" name="tuid" required />
+
+    <label for="email">TUmail:</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required />
+
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" required />
+
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" required />
+
+    <label for="student_id_image">Upload Student ID Image:</label>
+    <input type="file" id="student_id_image" name="student_id_image" accept="image/*" required />
+
+    <button type="submit">Register</button>
+  </form>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(document.getElementById('registerForm'));
+
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        body: formData
+      });
+
+      const msg = await res.text();
+
+      if (res.ok) {
+        alert('Registered!');
+        window.location.href = '/';
+      } else {
+        alert('Error: ' + msg);
+      }
+    });
+  </script>
+</body>
+</html>

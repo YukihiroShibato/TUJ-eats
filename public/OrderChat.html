@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TUJ Eats - Chat</title>
+    <link rel="stylesheet" href="orderChat.css" />
+  </head>
+  <body>
+    <div class="header-bar">
+      <button class="settings-btn" onclick="openSettings()">⚙️Settings</button>
+      <img
+        src="https://www.tuj.ac.jp/sites/all/modules/custom/tu_layout/theme/img/temple-logo-t-box.svg"
+        alt="TUJ Logo"
+        class="logo-background"
+      />
+      <h1 class="header-text">TUJ Eats</h1>
+    </div>
+
+    <main class="chat-content">
+      <!-- ORDER DETAILS -->
+      <section class="order-details" id="orderDetails">
+        <h2>Order Details</h2>
+        <p>Loading...</p>
+      </section>
+
+      <!-- CHAT HISTORY -->
+      <section class="chat-history" id="chatHistory">
+        <p>Loading chat...</p>
+      </section>
+
+      <!-- MESSAGE INPUT -->
+      <section class="chat-input">
+        <textarea
+          id="chatMessage"
+          placeholder="Type your message..."
+        ></textarea>
+        <button onclick="sendMessage()">Send</button>
+      </section>
+    </main>
+
+    <div class="bottom-nav">
+      <a href="orderFood.html">Order Food</a>
+      <a href="activity.html">Activity</a>
+      <a href="acceptOrders.html">Accept Orders</a>
+    </div>
+
+    <div id="settings-panel" class="settings-panel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeSettings()"
+        >×</a
+      >
+      <a href="userSettings.html">User Settings</a>
+      <a href="TermsAndCond.html">Terms & Conditions</a>
+      <a href="loginPage.html">Log Out</a>
+    </div>
+    <div id="overlay" class="overlay" onclick="closeSettings()"></div>
+
+    <script>
+      if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+
+      function openSettings() {
+        document.getElementById("settings-panel").style.width = "250px";
+        document.getElementById("overlay").style.display = "block";
+      }
+
+      function closeSettings() {
+        document.getElementById("settings-panel").style.width = "0";
+        document.getElementById("overlay").style.display = "none";
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get("orderId");
+      if (!orderId) {
+        alert("Missing orderId in URL");
+        window.location.href = "activity.html";
+      }
+
+      async function loadOrderDetails() {
+        try {
+          const res = await fetch(`/api/orders/${orderId}`);
+          if (!res.ok) throw new Error(await res.text());
+          const order = await res.json();
+
+          const section = document.getElementById("orderDetails");
+          section.innerHTML = `
+            <h2>Order Details</h2>
+            <p><strong>Restaurant:</strong> ${order.restaurant}</p>
+            <p><strong>Items:</strong> ${order.orderDetails}</p>
+            <p><strong>Time:</strong> ${order.deliveryTime}</p>
+            <p><strong>Room:</strong> ${order.deliveryLocation}</p>
+            <p><strong>Reward:</strong> ¥${order.reward}</p>
+            <p><strong>Status:</strong> ${order.status}</p>
+          `;
+        } catch (err) {
+          console.error(err);
+          document.getElementById("orderDetails").innerHTML =
+            "<p>Error loading order details.</p>";
+        }
+      }
+
+      async function loadMessages() {
+        try {
+          const res = await fetch(`/api/messages?orderId=${orderId}`);
+          if (!res.ok) throw new Error(await res.text());
+          const messages = await res.json();
+
+          const list = document.getElementById("chatHistory");
+          list.innerHTML = "";
+
+          const myId = localStorage.getItem("customerId");
+
+          messages.forEach((msg) => {
+            const div = document.createElement("div");
+            div.classList.add("message");
+            if (msg.senderId === myId) {
+              div.classList.add("sent");
+            } else {
+              div.classList.add("received");
+            }
+            div.textContent = `${msg.senderName}: ${msg.text}`;
+            list.appendChild(div);
+          });
+          list.scrollTop = list.scrollHeight;
+        } catch (err) {
+          console.error(err);
+          document.getElementById("chatHistory").innerHTML =
+            "<p>Error loading chat.</p>";
+        }
+      }
+
+
+      async function sendMessage() {
+        const text = document.getElementById("chatMessage").value.trim();
+        const senderId = localStorage.getItem("customerId");
+        if (!senderId) {
+          alert("You must log in first.");
+          window.location.href = "loginPage.html";
+          return;
+        }
+        if (!text) {
+          alert("Message cannot be empty.");
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId,
+              senderId,
+              text,
+            }),
+          });
+
+          if (res.ok) {
+            document.getElementById("chatMessage").value = "";
+            loadMessages();
+          } else {
+            const msg = await res.text();
+            alert("Error: " + msg);
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Server error.");
+        }
+      }
+
+      window.onload = () => {
+        loadOrderDetails();
+        loadMessages();
+      };
+    </script>
+  </body>
+</html>

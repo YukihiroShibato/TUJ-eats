@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TUJ Eats - Login</title>
+  <link rel="stylesheet" href="LoginStyles.css" />
+</head>
+<body>
+  <!-- Message box for displaying login/registration feedback -->
+  <div id="message" class="message"></div>
+
+  <div class="header-bar">
+    <img
+      src="https://www.tuj.ac.jp/sites/all/modules/custom/tu_layout/theme/img/temple-logo-t-box.svg"
+      alt="TUJ Logo"
+      class="logo-background"
+    />
+    <h1 class="header-text">TUJ Eats</h1>
+  </div>
+  
+  <form id="loginForm">
+    <div>
+      <label for="identifier">Email or TUid:</label>
+      <input type="text" id="identifier" name="identifier" required />
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required />
+    </div>
+    <div>
+      <button type="submit">Login</button>
+    </div>
+  </form>
+  
+  <p>Don’t have an account? <a href="RegisterPage.html">Register here</a>.</p>
+
+  <script>
+    // Get URL query parameters
+    const params = new URLSearchParams(window.location.search);
+    const messageDiv = document.getElementById("message");
+
+    if (params.has("registered")) {
+      messageDiv.textContent = "Registration successful! Please log in.";
+      messageDiv.style.color = "green";
+    }
+
+    if (params.get("error") === "invalid") {
+      messageDiv.textContent = "Invalid email/TUid or password.";
+      messageDiv.style.color = "red";
+    }
+
+    if (params.get("error") === "unauthorized") {
+      messageDiv.textContent = "You must log in first.";
+      messageDiv.style.color = "red";
+    }
+
+    if (params.get("error") === "notfound") {
+      messageDiv.textContent = "User not found. Please log in again.";
+      messageDiv.style.color = "red";
+    }
+
+    // Enable dark mode if set in localStorage
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark-mode");
+    }
+
+    // Handle Login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const identifier = document.getElementById('identifier').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ identifier, password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem("customerId", data.user.id);
+          alert(`Welcome, ${data.user.firstName}!`);
+          window.location.href = "OrderFood.html";
+        }else {
+          // Handle errors
+          const msg = await res.text();
+          messageDiv.textContent = msg;
+          messageDiv.style.color = "red";
+        }
+      } catch (err) {
+        console.error(err);
+        messageDiv.textContent = "Server error. Please try again later.";
+        messageDiv.style.color = "red";
+      }
+    });
+  </script>
+
+</body>
+</html>

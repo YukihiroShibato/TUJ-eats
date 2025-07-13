@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TUJ Eats - Order Food</title>
+    <link rel="stylesheet" href="orderFood.css" />
+  </head>
+  <body>
+    <div class="header-bar">
+      <button class="settings-btn" onclick="openSettings()">⚙️Settings</button>
+      <img
+        src="https://www.tuj.ac.jp/sites/all/modules/custom/tu_layout/theme/img/temple-logo-t-box.svg"
+        alt="TUJ Logo"
+        class="logo-background"
+      />
+      <h1 class="header-text">TUJ Eats</h1>
+    </div>
+
+    <div class="add-restaurant-btn-container">
+      <button class="add-restaurant-btn" onclick="openAddRestaurant()">+ Add Restaurant</button>
+    </div>
+
+    <main class="restaurant-grid" id="restaurantGrid">
+      <p>Loading restaurants...</p>
+    </main>
+
+    <!-- Restaurant Side Panel (pop-up) -->
+    <div id="restaurant-panel" class="restaurant-panel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closePanel()">×</a>
+      <div class="panel-content">
+        <h2 class="restaurant-title">Restaurant Name</h2>
+        <div class="restaurant-info">
+          <p class="restaurant-description">Here are some reviews about this place...</p>
+
+          <!-- COMMENTS LIST (scrollable) -->
+          <div class="comments-list"></div>
+
+          <!-- Comment input -->
+          <textarea id="commentInput" placeholder="Leave a comment..." class="comment-box"></textarea>
+          <button class="action-btn" onclick="leaveComment()">Leave Comment</button>
+
+          <div class="or-separator">OR</div>
+
+          <!-- Order Section -->
+          <div class="order-section">
+            <textarea id="orderDetailsInput" placeholder="Write your food order here..." class="comment-box"></textarea>
+
+            <label class="input-label" for="delivery-time">Delivery by:</label>
+            <select id="delivery-time" class="dropdown">
+              <option value="ASAP">ASAP</option>
+            </select>
+
+            <label class="input-label" for="delivery-location">Delivery location (Room):</label>
+            <input type="text" id="delivery-location" class="comment-box" maxlength="3" pattern="\d{3}" placeholder="e.g., 506" />
+
+            <label class="input-label" for="reward">Reward (¥):</label>
+            <select id="reward" class="dropdown">
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="400">400</option>
+              <option value="500">500</option>
+            </select>
+
+            <button class="action-btn" onclick="postOrder()">Post Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="closeSettings()"></div>
+
+    <div class="bottom-nav">
+      <a href="orderFood.html">Order Food</a>
+      <a href="activity.html">Activity</a>
+      <a href="acceptOrders.html">Accept Orders</a>
+    </div>
+
+    <div id="settings-panel" class="settings-panel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeSettings()">×</a>
+      <a href="userSettings.html">User Settings</a>
+      <a href="TermsAndCond.html">Terms & Conditions</a>
+      <a href="loginPage.html">Log Out</a>
+    </div>
+
+    <script>
+      let selectedRestaurantId = null;
+      if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+
+      function openSettings() {
+        document.getElementById("settings-panel").style.width = "250px";
+        document.getElementById("overlay").style.display = "block";
+      }
+
+      function closeSettings() {
+        document.getElementById("settings-panel").style.width = "0";
+        document.getElementById("overlay").style.display = "none";
+      }
+
+      function openAddRestaurant() {
+        window.location.href = 'AddRestaurant.html';
+      }
+
+      function openPanel(name, id) {
+        selectedRestaurantId = id;
+        document.getElementById("restaurant-panel").classList.add("open");
+        document.querySelector(".panel-content h2").textContent = name;
+
+        loadComments();
+      }
+
+      async function loadComments() {
+        const list = document.querySelector('.comments-list');
+        list.innerHTML = '<p>Loading comments...</p>';
+
+        try {
+          const res = await fetch(`/api/comments?restaurantId=${selectedRestaurantId}`);
+          if (!res.ok) throw new Error(await res.text());
+          const comments = await res.json();
+
+          if (comments.length === 0) {
+            list.innerHTML = '<p>No comments yet. Be the first!</p>';
+            return;
+          }
+
+          list.innerHTML = '';
+          comments.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'comment-card';
+            card.textContent = `${c.userName}: ${c.text}`;
+            list.appendChild(card);
+          });
+
+        } catch (err) {
+          console.error(err);
+          list.innerHTML = '<p style="color:red;">Error loading comments.</p>';
+        }
+      }
+
+      async function leaveComment() {
+        const text = document.getElementById('commentInput').value.trim();
+        const userId = localStorage.getItem('customerId');
+        if (!userId) {
+          alert('You must log in first.');
+          window.location.href = 'loginPage.html';
+          return;
+        }
+        if (!text) {
+          alert('Comment cannot be empty.');
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/comments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              restaurantId: selectedRestaurantId,
+              userId,
+              text
+            })
+          });
+
+          if (res.ok) {
+            document.getElementById('commentInput').value = '';
+            loadComments();
+          } else {
+            const msg = await res.text();
+            alert('Error: ' + msg);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Server error.');
+        }
+      }
+
+      function closePanel() {
+        document.getElementById("restaurant-panel").classList.remove("open");
+      }
+
+      function generateDeliveryTimes() {
+        const now = new Date();
+        const dropdown = document.getElementById("delivery-time");
+        const startHour = 9;
+        const endHour = 17;
+
+        for (let hour = startHour; hour <= endHour; hour++) {
+          for (let minute of [0, 15, 30, 45]) {
+            const optionTime = new Date();
+            optionTime.setHours(hour, minute, 0, 0);
+
+            if (optionTime - now >= 30 * 60 * 1000) {
+              const label = optionTime.toTimeString().slice(0, 5);
+              const option = document.createElement("option");
+              option.value = label;
+              option.textContent = label;
+              dropdown.appendChild(option);
+            }
+          }
+        }
+      }
+
+      document.getElementById("delivery-location").addEventListener("input", function (e) {
+        const val = e.target.value;
+        if (!/^\d{0,3}$/.test(val)) {
+          e.target.value = val.slice(0, 3).replace(/\D/g, "");
+        }
+      });
+
+      async function postOrder() {
+        const restaurant = document.querySelector(".restaurant-title").textContent;
+        const orderDetails = document.getElementById('orderDetailsInput').value;
+        const deliveryLocation = document.getElementById("delivery-location").value;
+        const deliveryTime = document.getElementById("delivery-time").value;
+        const reward = document.getElementById("reward").value;
+        const customerId = localStorage.getItem("customerId");
+
+        if (!customerId) {
+          alert("Error: You must log in first.");
+          window.location.href = 'loginPage.html';
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              customerId,
+              restaurant,
+              orderDetails,
+              deliveryLocation,
+              deliveryTime,
+              reward
+            })
+          });
+
+          if (res.ok) {
+            alert('Order posted successfully!');
+            closePanel();
+          } else {
+            const msg = await res.text();
+            alert('Error: ' + msg);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Server error.');
+        }
+      }
+
+      async function loadRestaurants() {
+        const grid = document.getElementById('restaurantGrid');
+        grid.innerHTML = '<p>Loading restaurants...</p>';
+
+        try {
+          const res = await fetch('/api/restaurants');
+          if (!res.ok) throw new Error(await res.text());
+          const restaurants = await res.json();
+
+          if (restaurants.length === 0) {
+            grid.innerHTML = '<p>No restaurants added yet.</p>';
+            return;
+          }
+
+          grid.innerHTML = '';
+          restaurants.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'restaurant-card';
+            card.onclick = () => openPanel(r.name, r._id);
+
+            let photoHTML = '';
+            if (r.photoFilename) {
+              photoHTML = `<img src="/uploads/${r.photoFilename}" alt="${r.name}" style="width:100%; height:150px; object-fit:cover; border-radius:6px;">`;
+            }
+
+            card.innerHTML = `
+              ${photoHTML}
+              <h3>${r.name}</h3>
+              <p>${r.branch}</p>
+              <p>${r.category}</p>
+            `;
+            grid.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err);
+          grid.innerHTML = '<p style="color:red;">Error loading restaurants.</p>';
+        }
+      }
+
+      window.onload = () => {
+        generateDeliveryTimes();
+        loadRestaurants();
+      }
+    </script>
+  </body>
+</html>

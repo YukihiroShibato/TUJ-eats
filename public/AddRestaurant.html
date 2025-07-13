@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Restaurant</title>
+    <link rel="stylesheet" href="homeStyle.css" />
+    <link rel="stylesheet" href="AddRestaurantStyle.css" />
+  </head>
+  <body>
+    <div class="header-bar">
+      <button class="settings-btn" onclick="openSettings()">⚙️Settings</button>
+      <img
+        src="https://www.tuj.ac.jp/sites/all/modules/custom/tu_layout/theme/img/temple-logo-t-box.svg"
+        alt="TUJ Logo"
+        class="logo-background"
+      />
+      <h1 class="header-text">TUJ Eats</h1>
+    </div>
+
+    <form class="add-restaurant-form" id="restaurantForm" enctype="multipart/form-data">
+      <h2>Add New Restaurant</h2>
+      <label for="photo">Square Photo:</label>
+      <input type="file" id="photo" name="photo" accept="image/*" required>
+
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="branch">Branch:</label>
+      <input type="text" id="branch" name="branch" required>
+
+      <label for="category">Category:</label>
+      <input type="text" id="category" name="category" required>
+
+      <button type="submit">Add Restaurant</button>
+    </form>
+
+    <div class="bottom-nav">
+      <a href="orderFood.html">Order Food</a>
+      <a href="activity.html">Activity</a>
+      <a href="acceptOrders.html">Accept Orders</a>
+    </div>
+
+    <div id="settings-panel" class="settings-panel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeSettings()">×</a>
+      <a href="userSettings.html">User Settings</a>
+      <a href="TermsAndCond.html">Terms & Conditions</a>
+      <a href="loginPage.html">Log Out</a>
+    </div>
+    <div id="overlay" class="overlay" onclick="closeSettings()"></div>
+
+    <script>
+      if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+
+      function openSettings() {
+        document.getElementById("settings-panel").style.width = "250px";
+        document.getElementById("overlay").style.display = "block";
+      }
+
+      function closeSettings() {
+        document.getElementById("settings-panel").style.width = "0";
+        document.getElementById("overlay").style.display = "none";
+      }
+
+      document.getElementById('restaurantForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(document.getElementById('restaurantForm'));
+
+        try {
+          const res = await fetch('/api/restaurants', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (res.ok) {
+            alert('Restaurant added successfully!');
+            window.location.href = 'orderFood.html';
+          } else {
+            const msg = await res.text();
+            alert('Error: ' + msg);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Server error.');
+        }
+      });
+    </script>
+  </body>
+</html>

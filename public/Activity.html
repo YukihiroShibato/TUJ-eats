@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TUJ Eats - Activity</title>
+    <link rel="stylesheet" href="activityStyle.css" />
+  </head>
+  <body>
+    <div class="header-bar">
+      <button class="settings-btn" onclick="openSettings()">⚙️Settings</button>
+      <img
+        src="https://www.tuj.ac.jp/sites/all/modules/custom/tu_layout/theme/img/temple-logo-t-box.svg"
+        alt="TUJ Logo"
+        class="logo-background"
+      />
+      <h1 class="header-text">TUJ Eats</h1>
+    </div>
+
+    <main class="activity-content">
+      <!-- My Requests Section -->
+      <section class="activity-section">
+        <h2>My Requests</h2>
+      </section>
+
+      <!-- My Deliveries Section -->
+      <section class="activity-section">
+        <h2>My Deliveries</h2>
+      </section>
+    </main>
+
+    <div class="bottom-nav">
+      <a href="orderFood.html">Order Food</a>
+      <a href="activity.html">Activity</a>
+      <a href="acceptOrders.html">Accept Orders</a>
+    </div>
+
+    <!-- Settings Side Panel -->
+    <div id="settings-panel" class="settings-panel">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeSettings()">×</a>
+      <a href="userSettings.html">User Settings</a>
+      <a href="TermsAndCond.html">Terms & Conditions</a>
+      <a href="loginPage.html">Log Out</a>
+    </div>
+    <div id="overlay" class="overlay" onclick="closeSettings()"></div>
+
+    <script>
+      // Dark mode
+      if (localStorage.getItem("darkMode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+
+      // Settings panel
+      function openSettings() {
+        document.getElementById("settings-panel").style.width = "250px";
+        document.getElementById("overlay").style.display = "block";
+      }
+
+      function closeSettings() {
+        document.getElementById("settings-panel").style.width = "0";
+        document.getElementById("overlay").style.display = "none";
+      }
+
+      // Load activity data
+      async function loadActivity() {
+        const userId = localStorage.getItem("customerId");
+        if (!userId) {
+          alert("Error: You must log in first.");
+          window.location.href = "loginPage.html";
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/orders/activity?userId=${userId}`);
+          if (!res.ok) {
+            throw new Error(await res.text());
+          }
+
+          const data = await res.json();
+          renderRequests(data.myRequests);
+          renderDeliveries(data.myDeliveries);
+        } catch (err) {
+          console.error(err);
+          alert('Error loading activity data.');
+        }
+      }
+
+      // Render My Requests section
+      function renderRequests(requests) {
+        const section = document.querySelectorAll('.activity-section')[0];
+        section.innerHTML = '<h2>My Requests</h2>';
+        if (requests.length === 0) {
+          section.innerHTML += '<p>No requests yet.</p>';
+          return;
+        }
+
+        requests.forEach(order => {
+          const card = document.createElement('div');
+          card.className = 'activity-card';
+          card.style.cursor = 'pointer';
+          card.onclick = () => {
+            window.location.href = `OrderChat.html?orderId=${order._id}`;
+          };
+          card.innerHTML = `
+            <div class="card-header">
+              <div class="order-title">${order.restaurant}</div>
+              <div class="order-date">${new Date(order.createdAt).toLocaleDateString()}</div>
+            </div>
+            <div class="order-text">Order: ${order.orderDetails}</div>
+            <div class="order-driver">Status: ${order.status}</div>
+          `;
+          section.appendChild(card);
+        });
+      }
+
+
+      // Render My Deliveries section
+      function renderDeliveries(deliveries) {
+        const section = document.querySelectorAll('.activity-section')[1];
+        section.innerHTML = '<h2>My Deliveries</h2>';
+        if (deliveries.length === 0) {
+          section.innerHTML += '<p>No deliveries yet.</p>';
+          return;
+        }
+
+        deliveries.forEach(order => {
+          const card = document.createElement('div');
+          card.className = 'activity-card';
+          card.style.cursor = 'pointer';
+          card.onclick = () => {
+            window.location.href = `OrderChat.html?orderId=${order._id}`;
+          };
+          card.innerHTML = `
+            <div class="card-header">
+              <div class="order-title">${order.restaurant}</div>
+              <div class="order-date">${new Date(order.createdAt).toLocaleDateString()}</div>
+            </div>
+            <div class="order-text">Order: ${order.orderDetails}</div>
+            <div class="order-driver">Delivered to: ${order.customerName}</div>
+          `;
+          section.appendChild(card);
+        });
+      }
+
+
+      // Load on page load
+      window.onload = loadActivity;
+    </script>
+  </body>
+</html>
